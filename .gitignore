@@ -1,3 +1,6 @@
+integrators_tests
+solsys
+
 # Created by .ignore support plugin (hsz.mobi)
 ### Vim template
 # Swap
@@ -63,6 +66,7 @@ tags
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/
 
 # Generated files
 .idea/**/contentModel.xml

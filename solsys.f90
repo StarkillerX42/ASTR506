@@ -1,12 +1,13 @@
 program solsys
+    use integrators
     implicit none
-    real, dimension(1:10) :: masses
-    real, dimension(1:10) :: sma
-    real, dimension(1:10) :: ecc
-    real, dimension(1:10) :: incl
-    real, dimension(1:10) :: bigomega
-    real, dimension(1:10) :: omega
-    real, dimension(1:10) :: ftrue
+    real, dimension(0:9) :: masses
+    real, dimension(0:9) :: sma
+    real, dimension(0:9) :: ecc
+    real, dimension(0:9) :: incl
+    real, dimension(0:9) :: bigomega
+    real, dimension(0:9) :: omega
+    real, dimension(0:9) :: ftrue
 
  ! masses in g, sma in AU, angles in deg
  ! Orbital parameters and masses from dePater & Lissauer for planets
