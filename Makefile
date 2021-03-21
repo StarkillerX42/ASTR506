@@ -10,4 +10,3 @@ euler:
 
 solsys:
 	gfortran -O3 -o solsys solsys.f90
-
