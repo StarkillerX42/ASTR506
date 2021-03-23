@@ -5,7 +5,7 @@ FLAGS=-O3 -g
 
 OBJS=integrators.o
 
-all: init euler solsys
+all: init tests solsys test
 
 #setup:
 #	python setup.py build_ext
@@ -18,11 +18,11 @@ test:
 init:
 	$(FC) $(FLAGS) -c integrators.f90 integrators_tests.f90 solsys.f90
 
-euler:
+tests:
 	$(FC) $(FLAGS) -o integrators_tests integrators_tests.o $(OBJS)
 
 solsys:
 	$(FC) $(FLAGS) -o solsys solsys.o $(OBJS)
 
 clean:
-	rm euler; rm solsys; rm integrators_tests; rm *.mod; rm *.o; rm *.out
+	rm euler; fi; rm solsys; rm integrators_tests; rm *.mod; rm *.o; rm *.out

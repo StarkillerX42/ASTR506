@@ -15,6 +15,10 @@ program test
     print *, "Euler forward:"
     print *, poses
     poses = 0.
+    call rk3_classic(2, masses, positions, velocities, dt, poses, vels)
+    print *, "RK3:"
+    print *, poses
+    poses = 0.
     call rkf45(2, masses, positions, velocities, dt, poses, vels)
     print *, "RKF45:"
     print *, poses
