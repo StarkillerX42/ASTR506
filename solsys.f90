@@ -1,5 +1,5 @@
 program solsys
-    use integrators
+    use n_bodies
     implicit none
     real, dimension(0:9) :: masses
     real, dimension(0:9) :: sma
