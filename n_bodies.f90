@@ -49,5 +49,13 @@ module n_bodies
         end do
     end function average_vel
 
+    subroutine n_bodies(integrator, n, masses, i_pos, i_vel, t_tot, dt, G)
+        character, intent(in) :: integrator
+        integer, intent(in) :: n
+        real, masses(n), intent(in) :: masses
+        real, dimension(n, 3), intent(in) :: i_pos
+        real,
+    end subroutine n_bodies
+
 
 end module n_bodies
