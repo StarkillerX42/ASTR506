@@ -5,22 +5,22 @@ module integrators
 
     function vec_mag(n_dim, rel_vec)
         integer, intent(in) :: n_dim
-        real, dimension(n_dim), intent(in) :: rel_vec
-        real :: vec_mag
+        real(8), dimension(n_dim), intent(in) :: rel_vec
+        real(8) :: vec_mag
         vec_mag = sqrt(sum(rel_vec**2))
     end function vec_mag
 
     subroutine euler_forward(n, masses, positions, velocities, dt, poses, vels)
         implicit none
         integer, intent(in) :: n
-        real, dimension(n), intent(in) :: masses
-        real, dimension(3) :: rel
-        real, dimension(n, 3), intent(in) :: positions, velocities
-        real, dimension(n, 3) :: accels
-        real, dimension(n, 3), intent(out):: poses, vels
-        real, intent(in) :: dt
+        real(8), dimension(n), intent(in) :: masses
+        real(8), dimension(3) :: rel
+        real(8), dimension(n, 3), intent(in) :: positions, velocities
+        real(8), dimension(n, 3) :: accels
+        real(8), dimension(n, 3), intent(out):: poses, vels
+        real(8), intent(in) :: dt
         integer :: i, j
-        real :: rel_mag
+        real(8) :: rel_mag
         accels = 0.
         !    f2py intent(in) n, masses, positions, velocities, dt
         !    f2py intent(out) poses, vels
@@ -45,14 +45,16 @@ module integrators
     subroutine kdk(n, masses, positions, velocities, dt, poses, vels)
         implicit none
         integer, intent(in) :: n
-        real, dimension(n), intent(in) :: masses
-        real, dimension(3) :: rel
-        real, dimension(n, 3), intent(in) :: positions, velocities
-        real, dimension(n, 3) :: accels
-        real, dimension(n, 3), intent(out) :: poses, vels
+        real(8), dimension(n), intent(in) :: masses
+        real(8), dimension(3) :: rel
+        real(8), dimension(n, 3), intent(in) :: positions, velocities
+        real(8), dimension(n, 3) :: accels
+        real(8), dimension(n, 3), intent(out) :: poses, vels
         integer :: i, j
-        real, intent(in) :: dt
-        real :: rel_mag
+        real(8), intent(in) :: dt
+        real(8) :: rel_mag
+        rel = 0.
+        rel_mag = 0.
         accels = 0.
         do i=1, n
             do j=1, n
@@ -88,26 +90,30 @@ module integrators
     subroutine kdk_gal(n, masses, positions, velocities, dt, poses, vels)
         implicit none
         integer, intent(in) :: n
-        real, dimension(n), intent(in) :: masses
-        real, dimension(3) :: rel
-        real, dimension(n, 3), intent(in) :: positions, velocities
-        real, dimension(n, 3) :: accels
-        real, dimension(n, 3), intent(out) :: poses, vels
-        integer :: i, j
-        real, intent(in) :: dt
-        real :: rel_mag
+        real(8), dimension(n), intent(in) :: masses
+        real(8), dimension(3) :: rel
+        real(8), dimension(n, 3), intent(in) :: positions, velocities
+        real(8), dimension(n, 3) :: accels
+        real(8), dimension(n, 3), intent(out) :: poses, vels
+        integer :: i
+        real(8), intent(in) :: dt
+        real(8) :: rel_mag
+        rel = 0.
         accels = 0.
+        rel_mag = 1.
         do i=1, n
-            rel = positions(j, :)
+            rel = positions(i, :)
             rel_mag = vec_mag(3, rel)
             accels(i, :) = (-log(1 + rel_mag) / rel_mag ** 2 + 1 / rel_mag / (1 + rel_mag)) * rel(:) / rel_mag
+!            print*, accels(i, :)
             vels(i, :) = velocities(i, :) + accels(i, :) * dt / 2.  ! Kick
+!            print *, vels(i, :)
             poses(i, :) = positions(i, :) + vels(i, :) * dt  ! Drift
         end do
         accels = 0.  ! Reset accels for second kick
 
         do i=1, n
-            rel = poses(j, :)
+            rel = poses(i, :)
             rel_mag = vec_mag(3, rel)
             accels(i, :) = (-log(1 + rel_mag) / rel_mag ** 2 + 1 / rel_mag / (1 + rel_mag)) * rel(:) / rel_mag
             vels(i, :) = vels(i, :) + accels(i, :) * dt / 2.  ! Kick 2
@@ -119,12 +125,12 @@ module integrators
     subroutine rk_pde(n, masses, positions, velocities, vels, accels)
         implicit none
         integer, intent(in) :: n
-        real, dimension(n), intent(in) :: masses
-        real, dimension(3) :: rel
-        real, dimension(n, 3), intent(in) :: positions, velocities
-        real, dimension(n, 3), intent(out) :: vels, accels
+        real(8), dimension(n), intent(in) :: masses
+        real(8), dimension(3) :: rel
+        real(8), dimension(n, 3), intent(in) :: positions, velocities
+        real(8), dimension(n, 3), intent(out) :: vels, accels
         integer :: i, j
-        real :: rel_mag
+        real(8) :: rel_mag
     !    f2py intent(in) masses, positions, velocities, dt
     !    f2py intent(out) poses, vels
         vels = 0.
@@ -151,16 +157,16 @@ module integrators
     subroutine rk3_classic(n, masses, positions, velocities, dt, poses, vels)
         implicit none
         integer, intent(in) :: n
-        real, dimension(n), intent(in) :: masses
-        real, dimension(3) :: rel
-        real, dimension(n, 3), intent(in) :: positions, velocities
-        real, dimension(n, 3), intent(out) :: poses, vels
+        real(8), dimension(n), intent(in) :: masses
+        real(8), dimension(3) :: rel
+        real(8), dimension(n, 3), intent(in) :: positions, velocities
+        real(8), dimension(n, 3), intent(out) :: poses, vels
         integer :: i, j, k, l
-        real, intent(in) :: dt
-        real, dimension(3, 3) :: coefficients
-        real, dimension(4) :: weights
-        real, dimension(4, n, 3) :: k_poses, k_vels
-        real, dimension(n, 3) :: temp_p, temp_v
+        real(8), intent(in) :: dt
+        real(8), dimension(3, 3) :: coefficients
+        real(8), dimension(4) :: weights
+        real(8), dimension(4, n, 3) :: k_poses, k_vels
+        real(8), dimension(n, 3) :: temp_p, temp_v
         k_poses = 0.
         k_vels = 0.
         temp_p = 0.
@@ -201,19 +207,19 @@ module integrators
             vels_low, poses_high, vels_high)
         implicit none
         integer, intent(in) :: n
-        real, dimension(n), intent(in) :: masses
-        real, dimension(3) :: rel
-        real, dimension(n, 3), intent(in) :: positions, velocities
-!        real, dimension(n, 3) :: accels
-        real, dimension(n, 3), intent(out) :: poses_low, vels_low, poses_high, &
+        real(8), dimension(n), intent(in) :: masses
+        real(8), dimension(3) :: rel
+        real(8), dimension(n, 3), intent(in) :: positions, velocities
+!        real(8), dimension(n, 3) :: accels
+        real(8), dimension(n, 3), intent(out) :: poses_low, vels_low, poses_high, &
                 vels_high
         integer :: i, j, k, l
-        real, intent(in) :: dt
-        real :: rel_mag
-        real, dimension(5, 5) :: coefficients
-        real, dimension(6) :: weights_4, weights_5
-        real, dimension(6, n, 3) :: k_poses, k_vels
-        real, dimension(n, 3) :: temp_p, temp_v
+        real(8), intent(in) :: dt
+        real(8) :: rel_mag
+        real(8), dimension(5, 5) :: coefficients
+        real(8), dimension(6) :: weights_4, weights_5
+        real(8), dimension(6, n, 3) :: k_poses, k_vels
+        real(8), dimension(n, 3) :: temp_p, temp_v
         k_poses = 0.
         k_vels = 0.
         temp_p = 0.

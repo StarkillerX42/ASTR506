@@ -14,7 +14,7 @@ init:
 	$(FC) $(FLAGS) -c integrators.f90 n_bodies.f90 integrators_tests.f90 solsys.f90
 
 py_ext:
-	f2py -c -m fortpy integrators.f90 n_bodies.f90 --f90flags="$(FLAGS)"
+	f2py -c -m fortpy integrators.f90 n_bodies.f90 --f90flags="$(FLAGS)" --quiet
 
 integrators_tests:
 	$(FC) $(FLAGS) -o integrators_tests integrators_tests.o $(OBJS)

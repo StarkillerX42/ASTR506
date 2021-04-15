@@ -54,18 +54,18 @@ module n_bodies
         implicit none
         character(len=64), intent(in) :: integrator
         integer :: n
-        real, dimension(n), intent(in) :: masses
-        real, dimension(n, 3), intent(in) :: i_pos, i_vel
-        real, dimension(n, 3) :: poses, vels, null_poses, null_vels
-        real, dimension(n, 3) :: tmp_poses, tmp_vels, accels
-        real, dimension(3) :: com, avv
-        real, intent(in) :: t_tot, dt
-        real, intent(in) :: G
-        real :: t_now
+        real(8), dimension(n), intent(in) :: masses
+        real(8), dimension(n, 3), intent(in) :: i_pos, i_vel
+        real(8), dimension(n, 3) :: poses, vels, null_poses, null_vels
+        real(8), dimension(n, 3) :: tmp_poses, tmp_vels, accels
+        real(8), dimension(3) :: com, avv
+        real(8), intent(in) :: t_tot, dt
+        real(8), intent(in) :: G
+        real(8) :: t_now
         integer :: t, i, j, n_steps
-        real, intent(inout) :: times(:)
+        real(8), intent(inout) :: times(:)
         ! shape n_steps, n, 3
-        real, dimension(:, :, :), intent(inout) :: positions, velocities
+        real(8), dimension(:, :, :), intent(inout) :: positions, velocities
         n_steps = int(t_tot/dt)
 !        allocate(times(n_steps))
 !        allocate(positions(n_steps, n, 3))
@@ -73,12 +73,12 @@ module n_bodies
 
 
         ! Centers the system inputs
-        com(:) = center_of_mass(n, masses, i_pos)
-        avv(:) = average_vel(n, masses, i_vel)
-        do i=1, n
-            poses(i, :) = i_pos(i, :) - com
-            vels(i, :) = i_vel(i, :) - avv
-        end do
+!        com(:) = center_of_mass(n, masses, i_pos)
+!        avv(:) = average_vel(n, masses, i_vel)
+!        do i=1, n
+!            poses(i, :) = i_pos(i, :) - com
+!            vels(i, :) = i_vel(i, :) - avv
+!        end do
 
         timeloop: do t=1, n_steps
             times(t) = t_now
@@ -127,12 +127,12 @@ module n_bodies
             end do
 
             ! Recenters the system
-            com = center_of_mass(n, masses, poses)
-            avv = average_vel(n, masses, vels)
-            do i=1, n
-                poses(i, :) = poses(i, :) - com(:)
-                vels(i, :) = vels(i, :) - avv(:)
-            end do
+!            com = center_of_mass(n, masses, poses)
+!            avv = average_vel(n, masses, vels)
+!            do i=1, n
+!                poses(i, :) = poses(i, :) - com(:)
+!                vels(i, :) = vels(i, :) - avv(:)
+!            end do
 
 
         end do timeloop
