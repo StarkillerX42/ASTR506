@@ -49,13 +49,95 @@ module n_bodies
         end do
     end function average_vel
 
-    subroutine n_bodies(integrator, n, masses, i_pos, i_vel, t_tot, dt, G)
-        character, intent(in) :: integrator
-        integer, intent(in) :: n
-        real, masses(n), intent(in) :: masses
-        real, dimension(n, 3), intent(in) :: i_pos
-        real,
-    end subroutine n_bodies
+    subroutine n_body_model(integrator, n, masses, i_pos, i_vel, t_tot, dt, &
+                            g, times, positions, velocities)
+        implicit none
+        character(len=64), intent(in) :: integrator
+        integer :: n
+        real, dimension(n), intent(in) :: masses
+        real, dimension(n, 3), intent(in) :: i_pos, i_vel
+        real, dimension(n, 3) :: poses, vels, null_poses, null_vels
+        real, dimension(n, 3) :: tmp_poses, tmp_vels, accels
+        real, dimension(3) :: com, avv
+        real, intent(in) :: t_tot, dt
+        real, intent(in) :: G
+        real :: t_now
+        integer :: t, i, j, n_steps
+        real, intent(inout) :: times(:)
+        ! shape n_steps, n, 3
+        real, dimension(:, :, :), intent(inout) :: positions, velocities
+        n_steps = int(t_tot/dt)
+!        allocate(times(n_steps))
+!        allocate(positions(n_steps, n, 3))
+!        allocate(velocities(n_steps, n, 3))
+
+
+        ! Centers the system inputs
+        com(:) = center_of_mass(n, masses, i_pos)
+        avv(:) = average_vel(n, masses, i_vel)
+        do i=1, n
+            poses(i, :) = i_pos(i, :) - com
+            vels(i, :) = i_vel(i, :) - avv
+        end do
+
+        timeloop: do t=1, n_steps
+            times(t) = t_now
+            positions(t, :, :) = poses(:, :)
+            velocities(t, :, :) = vels(:, :)
+            ! Run the integrator of choice for a timestep, using temporary
+            ! variables to avoid simultaneous IO for variables
+            if (integrator == "euler") then
+                call euler_forward(n, masses, poses, vels, dt, tmp_poses, &
+                        tmp_vels)
+                poses = tmp_poses
+                vels = tmp_vels
+            else if (integrator == "kdk") then
+                call kdk(n, masses, poses, vels, dt, tmp_poses, tmp_vels)
+                poses = tmp_poses
+                vels = tmp_vels
+            else if (integrator == "rk3") then
+                call rk3_classic(n, masses, poses, vels, dt, tmp_poses, tmp_vels)
+                poses = tmp_poses
+                vels = tmp_vels
+            else if (integrator == "rk4") then
+                call rkf45(n, masses, poses, vels, dt, tmp_poses, tmp_vels, &
+                           null_poses, null_vels)
+                poses = tmp_poses
+                vels = tmp_vels
+            else if (integrator == "rk5") then
+                call rkf45(n, masses, poses, vels, dt, null_poses, null_vels, &
+                        tmp_poses, tmp_vels)
+                poses = tmp_poses
+                vels = tmp_vels
+                t_now = t_now + dt
+            end if
+
+            ! Check validity of the integrator's calculation
+            do i=1, n
+                do j=1, 3
+                    if (isnan(poses(i, j))) then
+                        print *, "NAN encountered for position at", i, j
+                        exit timeloop
+                    end if
+                    if (isnan(vels(i, j))) then
+                        print *, "NAN encountered for velocity at", i, j
+                        exit timeloop
+                    end if
+                end do
+            end do
+
+            ! Recenters the system
+            com = center_of_mass(n, masses, poses)
+            avv = average_vel(n, masses, vels)
+            do i=1, n
+                poses(i, :) = poses(i, :) - com(:)
+                vels(i, :) = vels(i, :) - avv(:)
+            end do
+
+
+        end do timeloop
+
+    end subroutine n_body_model
 
 
 end module n_bodies
