@@ -64,7 +64,7 @@ module n_bodies
         real(8), dimension(n, 3) :: tmp_poses, tmp_vels, accels
         real(8), dimension(3) :: com, avv
         real(8), intent(in) :: t_tot, dt
-        real(8), intent(in) :: G
+        real(8), intent(in) :: g
         logical, intent(in) :: update_com
         real(8) :: t_now
         integer(8) :: t, i, j
@@ -107,7 +107,7 @@ module n_bodies
 !             Run the integrator of choice for a timestep, using temporary
 !             variables to avoid simultaneous IO for variables
             if (integrator(1:len("euler")) == "euler") then
-                call euler_forward(n, masses, poses, vels, dt, tmp_poses, &
+                call euler_forward(n, masses, poses, vels, dt, g, tmp_poses, &
                         tmp_vels)
 !                print *, poses(2, :), tmp_poses(2, :)
 !                print *, vels(2, :), tmp_vels(2, :)
@@ -116,20 +116,20 @@ module n_bodies
                     vels(i, :) = tmp_vels(i, :)
                 end do
             else if (integrator(1:len("kdk")) == "kdk") then
-                call kdk(n, masses, poses, vels, dt, tmp_poses, tmp_vels)
+                call kdk(n, masses, poses, vels, dt, g, tmp_poses, tmp_vels)
                 poses = tmp_poses
                 vels = tmp_vels
             else if (integrator(1:len("rk3")) == "rk3") then
-                call rk3_classic(n, masses, poses, vels, dt, tmp_poses, tmp_vels)
+                call rk3_classic(n, masses, poses, vels, dt, g, tmp_poses, tmp_vels)
                 poses = tmp_poses
                 vels = tmp_vels
             else if (integrator == "rk4") then
-                call rkf45(n, masses, poses, vels, dt, tmp_poses, tmp_vels, &
+                call rkf45(n, masses, poses, vels, dt, g, tmp_poses, tmp_vels, &
                            null_poses, null_vels)
                 poses = tmp_poses
                 vels = tmp_vels
             else if (integrator == "rk5") then
-                call rkf45(n, masses, poses, vels, dt, null_poses, null_vels, &
+                call rkf45(n, masses, poses, vels, dt, g, null_poses, null_vels, &
                         tmp_poses, tmp_vels)
                 poses = tmp_poses
                 vels = tmp_vels
@@ -155,8 +155,8 @@ module n_bodies
 !            print *, vels(2, :)
             ! Recenters the system
             if (update_com) then
-                com(:) = center_of_mass(n, masses, i_pos)
-                avv(:) = average_vel(n, masses, i_vel)
+                com(:) = center_of_mass(n, masses, poses)
+                avv(:) = average_vel(n, masses, vels)
                 do i=1, n
                     poses(i, :) = poses(i, :) - com(:)
                     vels(i, :) = vels(i, :) - avv(:)
@@ -165,15 +165,13 @@ module n_bodies
 
 !            print *, vels(2, :)
 
-
-
         end do timeloop
 
     end subroutine n_body_model
 
 
     subroutine adaptive_n_body_model(integrator, n, n_times, masses, i_pos, &
-                                     i_vel, t_tot, tolerance, dt_0, q, G, &
+                                     i_vel, t_tot, tolerance, dt_0, q, g, &
                                      update_com, times, positions, &
                                      velocities, status)
         implicit none
@@ -184,7 +182,7 @@ module n_bodies
         real(8), dimension(n, 3) :: poses, vels, high_poses, high_vels
         real(8), dimension(n, 3) :: low_poses, low_vels, accels
         real(8), dimension(3) :: com, avv
-        real(8), intent(in) :: t_tot, tolerance, G, dt_0
+        real(8), intent(in) :: t_tot, tolerance, g, dt_0
         integer(8), intent(in) :: q
         logical, intent(in) :: update_com
         real(8) :: t_now, err_sum, dt
@@ -197,8 +195,8 @@ module n_bodies
         status = "Ok"
         dt = dt_0
         if (n_times < int(t_tot/dt)) then
-            print *, "SizeError, n_times too small for t_tot/dt"
-            status = "SizeError, n_times too small for t_tot/dt"
+            print *, "SizeRisk, n_times too small for t_tot/dt=", int(t_tot/dt)
+            status = "SizeRisk, n_times too small for t_tot/dt="
         else
             n_times_internal = floor(t_tot / dt)
         end if
@@ -220,6 +218,9 @@ module n_bodies
 !        print *, "Looping for...", n_times_internal
         timeloop: do t=1, n_times_internal
        !     print *, t
+            if (t_now > t_tot) then
+                exit timeloop
+            end if
             times(t) = t_now
             do i=1, n
                 positions(t, i, :) = poses(i, :)
@@ -229,12 +230,12 @@ module n_bodies
        !      Run the integrator of choice for a timestep, using temporary
        !      variables to avoid simultaneous IO for variables
             if (integrator(1:len("kdkrk3")) == "kdkrk3") then
-                call kdkrk3(n, masses, poses, vels, dt, low_poses, low_vels, &
+                call kdkrk3(n, masses, poses, vels, dt, g, low_poses, low_vels, &
                             high_poses, high_vels)
                 poses = high_poses
                 vels = high_vels
             else if (integrator(1:len("rkf45")) == "rkf45") then
-                call rkf45(n, masses, poses, vels, dt, low_poses, low_vels, &
+                call rkf45(n, masses, poses, vels, dt, g, low_poses, low_vels, &
                            high_poses, high_vels)
 !                print *, low_poses(2, :), high_poses(2, :)
                 do i=1, n
@@ -262,8 +263,8 @@ module n_bodies
        !     print *, vels(2, :)
             ! Recenters the system
             if (update_com) then
-                com(:) = center_of_mass(n, masses, i_pos)
-                avv(:) = average_vel(n, masses, i_vel)
+                com(:) = center_of_mass(n, masses, poses)
+                avv(:) = average_vel(n, masses, vels)
                 do i=1, n
                     poses(i, :) = poses(i, :) - com(:)
                     vels(i, :) = vels(i, :) - avv(:)

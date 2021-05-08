@@ -5,7 +5,7 @@ FLAGS=-O3 -g
 
 OBJS=n_bodies.o integrators.o
 
-all: init integrators_tests n_body_tests solsys run_tests
+all: init integrators_tests n_body_tests solsys
 
 #setup:
 #	python setup.py build_ext
@@ -28,7 +28,7 @@ solsys:
 clean:
 	rm solsys; rm integrators_tests; rm n_body_tests; rm *.mod; rm *.*o*
 
-run_tests:
+run:
 	./integrators_tests
 	time ./n_body_tests
 	./solsys

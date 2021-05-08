@@ -10,12 +10,13 @@ module integrators
         vec_mag = sqrt(sum(rel_vec**2))
     end function vec_mag
 
-    subroutine euler_forward(n, masses, positions, velocities, dt, poses, vels)
+    subroutine euler_forward(n, masses, positions, velocities, dt, g, poses, vels)
         implicit none
         integer(8), intent(in) :: n
         real(8), dimension(n), intent(in) :: masses
         real(8), dimension(3) :: rel
         real(8), dimension(n, 3), intent(in) :: positions, velocities
+        real(8), intent(in) :: g
         real(8), dimension(n, 3) :: accels
         real(8), dimension(n, 3), intent(out):: poses, vels
         real(8), intent(in) :: dt
@@ -32,7 +33,7 @@ module integrators
                     if (masses(j) /= 0.) then
                         rel = positions(j, :) - positions(i, :)
                         rel_mag = vec_mag(3, rel)
-                        accels(i, :) = accels(i, :) + masses(j) / rel_mag**3 * rel(:)
+                        accels(i, :) = accels(i, :) + g * masses(j) / rel_mag**3 * rel(:)
                     end if
                 end if
             end do
@@ -46,13 +47,14 @@ module integrators
     end subroutine euler_forward
 
 
-    subroutine kdk(n, masses, positions, velocities, dt, poses, vels)
+    subroutine kdk(n, masses, positions, velocities, dt, g, poses, vels)
         implicit none
         integer(8), intent(in) :: n
         real(8), dimension(n), intent(in) :: masses
         real(8), dimension(3) :: rel
         real(8), dimension(n, 3), intent(in) :: positions, velocities
         real(8), dimension(n, 3) :: accels
+        real(8), intent(in) :: g
         real(8), dimension(n, 3), intent(out) :: poses, vels
         integer(8) :: i, j
         real(8), intent(in) :: dt
@@ -66,7 +68,7 @@ module integrators
                     if (masses(j) /= 0) then
                         rel = positions(j, :) - positions(i, :)
                         rel_mag = vec_mag(3, rel)
-                        accels(i, :) = accels(i, :) + masses(j) / rel_mag**3 * rel(:)
+                        accels(i, :) = accels(i, :) + g * masses(j) / rel_mag**3 * rel(:)
                     end if
                 end if
             end do
@@ -81,7 +83,7 @@ module integrators
                     if (masses(j) /= 0) then
                         rel = poses(j, :) - poses(i, :)
                         rel_mag = vec_mag(3, rel)
-                        accels(i, :) = accels(i, :) + masses(j) / rel_mag**3 * rel(:)
+                        accels(i, :) = accels(i, :) + g * masses(j) / rel_mag**3 * rel(:)
                     end if
                 end if
             end do
@@ -91,12 +93,13 @@ module integrators
     end subroutine kdk
 
 
-    subroutine kdk_gal(n, masses, positions, velocities, dt, poses, vels)
+    subroutine kdk_gal(n, masses, positions, velocities, dt, g, poses, vels)
         implicit none
         integer(8), intent(in) :: n
         real(8), dimension(n), intent(in) :: masses
         real(8), dimension(3) :: rel
         real(8), dimension(n, 3), intent(in) :: positions, velocities
+        real(8), intent(in) :: g
         real(8), dimension(n, 3) :: accels
         real(8), dimension(n, 3), intent(out) :: poses, vels
         integer(8) :: i
@@ -126,10 +129,11 @@ module integrators
     end subroutine kdk_gal
 
 
-    subroutine rk_pde(n, masses, positions, velocities, vels, accels)
+    subroutine rk_pde(n, masses, positions, velocities, g, vels, accels)
         implicit none
         integer(8), intent(in) :: n
         real(8), dimension(n), intent(in) :: masses
+        real(8), intent(in) :: g
         real(8), dimension(3) :: rel
         real(8), dimension(n, 3), intent(in) :: positions, velocities
         real(8), dimension(n, 3), intent(out) :: vels, accels
@@ -147,7 +151,7 @@ module integrators
                         rel = positions(j, :) - positions(i, :)
 !                        print *, "rel and accels", rel, accels(i, :)
                         rel_mag = vec_mag(3, rel)
-                        accels(i, :) = accels(i, :) + masses(j) / rel_mag**3 * rel(:)
+                        accels(i, :) = accels(i, :) + g * masses(j) / rel_mag**3 * rel(:)
 !                        print *, "masse and accels", masses(i), accels(i, :)
                     end if
                 end if
@@ -158,13 +162,14 @@ module integrators
     end subroutine rk_pde
 
 
-    subroutine rk3_classic(n, masses, positions, velocities, dt, poses, vels)
+    subroutine rk3_classic(n, masses, positions, velocities, dt, g, poses, vels)
         implicit none
         integer(8), intent(in) :: n
         real(8), dimension(n), intent(in) :: masses
         real(8), dimension(3) :: rel
         real(8), dimension(n, 3), intent(in) :: positions, velocities
         real(8), dimension(n, 3), intent(out) :: poses, vels
+        real(8), intent(in) :: g
         integer(8) :: i, j, k, l
         real(8), intent(in) :: dt
         real(8), dimension(3, 3) :: coefficients
@@ -182,7 +187,7 @@ module integrators
         temp_p = 0.
         temp_v = 0.
 
-        call rk_pde(n, masses, positions, velocities, &
+        call rk_pde(n, masses, positions, velocities, g, &
                     k_poses(1, :, :), k_vels(1, :, :))
         do i=1, 3
             temp_p = positions
@@ -191,7 +196,7 @@ module integrators
                 temp_p = temp_p + k_poses(i, :, :) * coefficients(i, l) * dt
                 temp_v = temp_v + k_vels(i, :, :) * coefficients(i, l) * dt
             end do
-            call rk_pde(n, masses, temp_p, temp_v, &
+            call rk_pde(n, masses, temp_p, temp_v, g, &
                         k_poses(i + 1, :, :), k_vels(i + 1, :, :))
         end do
 
@@ -207,7 +212,7 @@ module integrators
     end subroutine rk3_classic
 
 
-    subroutine kdkrk3(n, masses, positions, velocities, dt, poses_low, &
+    subroutine kdkrk3(n, masses, positions, velocities, dt, g, poses_low, &
             vels_low, poses_high, vels_high)
         implicit none
         integer(8), intent(in) :: n
@@ -217,6 +222,7 @@ module integrators
         !        real(8), dimension(n, 3) :: accels
         real(8), dimension(n, 3), intent(out) :: poses_low, vels_low, poses_high, &
                 vels_high
+        real(8), intent(in) :: g
         integer(8) :: i, j, k, l
         real(8), intent(in) :: dt
         real(8) :: rel_mag
@@ -262,13 +268,14 @@ module integrators
     end subroutine kdkrk3
 
 
-    subroutine rkf45(n, masses, positions, velocities, dt, poses_low, &
+    subroutine rkf45(n, masses, positions, velocities, dt, g, poses_low, &
             vels_low, poses_high, vels_high)
         implicit none
         integer(8), intent(in) :: n
         real(8), dimension(n), intent(in) :: masses
         real(8), dimension(3) :: rel
         real(8), dimension(n, 3), intent(in) :: positions, velocities
+        real(8), intent(in) :: g
 !        real(8), dimension(n, 3) :: accels
         real(8), dimension(n, 3), intent(out) :: poses_low, vels_low, poses_high, &
                 vels_high
@@ -300,7 +307,7 @@ module integrators
         temp_p = 0.
         temp_v = 0.
 
-        call rk_pde(n, masses, positions, velocities, &
+        call rk_pde(n, masses, positions, velocities, g, &
                     k_poses(1, :, :), k_vels(1, :, :))
         do i=1, 5
             temp_p = positions
@@ -309,7 +316,7 @@ module integrators
                 temp_p = temp_p + k_poses(i, :, :) * coefficients(i, l) * dt
                 temp_v = temp_v + k_vels(i, :, :) * coefficients(i, l) * dt
             end do
-            call rk_pde(n, masses, temp_p, temp_v, &
+            call rk_pde(n, masses, temp_p, temp_v, g, &
                         k_poses(i + 1, :, :), k_vels(i + 1, :, :))
         end do
 
